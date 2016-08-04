@@ -1,0 +1,17 @@
+{
+  "name": "scraps",
+  "description": "",
+  "main": "index.js",
+  "authors": [
+    "Frank Lee <flee531@gmail.com>"
+  ],
+  "license": "ISC",
+  "homepage": "https://github.com/scandalouswool/scraps",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
