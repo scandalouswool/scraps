@@ -1,10 +1,3 @@
-// var express = require('express');
-// var socket = require('socket.io');
-// var http = require('http');
-
-// var app = express();
-// var server = http.createServer(app);
-// var io = socket.listen(server);
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
@@ -16,27 +9,56 @@ server.listen(8000, function() {
   console.log('Now listening on port 8000');
 });
 
+/************************************************
 // Worker Handlers
-
+************************************************/
 var workers = {};
 var workersCount = 0;
-
-// Project: find all primes 1,000,000 - 2,000,000
 var currentJob = 0;
 var jobs = [];
 var result = [];
 
-var createJobs = function() {
-  for (var i = 0; i < 10; i++) {
+// Project: find all primes 1,000,000 - 2,000,000
+
+// Function that finds all the primes between two values
+var findPrimes = function(min, max) {
+
+  // Little function that tests whether something is a prime
+  var primeTester = function(n) {
+    for (var i = 2; i < n - 1; i++) {
+      if (n % i === 0) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Loop through range and test if each value is a prime
+  var result = [];
+  for (var i = min; i <= max; i++) {
+    if (primeTester(i)) {
+      result.push(i);
+    }
+  }
+  return result;
+
+}
+
+var createJobs = function(functionPiece) {
+  var stringifiedFunction = functionPiece.toString();
+  console.log(stringifiedFunction);
+
+  for (var i = 1; i < 100000; i = i + 10000) {
     var newJob = {
-      data: [i, i + 1]
+      func: stringifiedFunction, // This is a stringified function
+      data: [i, i + 9999]
     }
 
     jobs.push(newJob);
   }
 }
 
-createJobs();
+createJobs(findPrimes);
 
 var addWorker = function() {
   var worker = {
@@ -74,7 +96,9 @@ var resolveJob = function(data) {
   result.push(data);
 };
 
+/************************************************
 // Web Socket Handlers
+************************************************/
 io.on('connect', function(socket) {
   console.log('User connected');
   var thisWorker = null;

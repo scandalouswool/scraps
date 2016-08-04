@@ -7,14 +7,13 @@ $(document).ready(function() {
   }
 
   socket.on('newjob', function(job) {
-    console.log('Working on new job:', job);
+    console.log('Working on new job');
     
-    var result = job.data[0] + job.data[1];
+    var functionSnippet = eval('(' + job.func + ')');
+    var result = functionSnippet(job.data[0], job.data[1]);
     
     console.log('Job complete. Result is: ', result);
-
     console.log('Sending result back to server');
-
     socket.emit('jobdone', result);
 
   });
