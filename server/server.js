@@ -23,24 +23,24 @@ var workersCount = 0;
 
 // Project: find all primes 1,000,000 - 2,000,000
 var currentJob = 0;
+var jobs = [];
+var result = [];
 
-function jobFunction(dataSet) {
-  return dataSet[0] + dataSet[1];
+var createJobs = function() {
+  for (var i = 0; i < 10; i++) {
+    var newJob = {
+      data: [i, i + 1]
+    }
+
+    jobs.push(newJob);
+  }
 }
 
-var jobs = [
-  {
-    data: [1, 2]
-  },
-  {
-    data: [2, 3]
-  }
-];
+createJobs();
 
 var addWorker = function() {
   var worker = {
-    id: workersCount,
-    currentJob: null
+    id: workersCount
   }
 
   workers[workersCount] = worker;
@@ -62,11 +62,17 @@ var assignJob = function() {
 
   if (job === undefined) {
     console.log('No more jobs available');
+    console.log('The final result is:', result);
     return;
   } else {
     return job;
   } 
-}
+};
+
+var resolveJob = function(data) {
+  console.log('Processing result received from worker');
+  result.push(data);
+};
 
 // Web Socket Handlers
 io.on('connect', function(socket) {
@@ -81,11 +87,25 @@ io.on('connect', function(socket) {
   });
 
   socket.on('disconnect', function() {
-
     if (thisWorker) {
       console.log('Trying to remove', thisWorker.id);
       removeWorker(thisWorker.id);
     }
+  });
+
+  socket.on('jobdone', function(data) {
+    console.log('Received result from ', thisWorker.id, ': ', data);
+
+    resolveJob(data);
+    console.log('Result so far is', result);
+
+    setTimeout(function() {
+      if (currentJob < jobs.length) {
+        socket.emit('newjob', assignJob());
+      } else {
+        console.log('No more jobs available');
+      }
+    }, 2000);
 
   });
 
