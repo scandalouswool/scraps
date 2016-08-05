@@ -2,6 +2,8 @@ var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
+var timers = require('node-timers');
+var _ = require('lodash');
 
 app.use(express.static(__dirname + '/../client'));
 
@@ -17,50 +19,25 @@ var workersCount = 0;
 var currentJob = 0;
 var jobs = [];
 var result = [];
+var myTimer = timers.simple();
 
-// Project: find all primes 1,000,000 - 2,000,000
-
-// Function that finds all the primes between two values
-var findPrimes = function(min, max) {
-
-  // Little function that tests whether something is a prime
-  var primeTester = function(n) {
-    for (var i = 2; i < n - 1; i++) {
-      if (n % i === 0) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  // Loop through range and test if each value is a prime
-  var result = [];
-  for (var i = min; i <= max; i++) {
-    if (primeTester(i)) {
-      result.push(i);
-    }
-  }
-  return result;
-
-}
-
-var createJobs = function(functionPiece) {
-  var stringifiedFunction = functionPiece.toString();
-  console.log(stringifiedFunction);
-
-  for (var i = 1; i < 100000; i = i + 10000) {
+var createJobs = function() {
+  // Hard-coded find primes up to one million, split between ten jobs
+  for (var i = 1; i < 1000000; i = i + 100000) {
+    startIndex = i
     var newJob = {
-      func: stringifiedFunction, // This is a stringified function
-      data: [i, i + 9999]
+      data: [i, i + 99999]
     }
-
     jobs.push(newJob);
   }
 }
 
-createJobs(findPrimes);
+createJobs();
 
 var addWorker = function() {
+  if (workersCount === 0) {
+    myTimer.start();
+  }
   var worker = {
     id: workersCount
   }
@@ -84,7 +61,8 @@ var assignJob = function() {
 
   if (job === undefined) {
     console.log('No more jobs available');
-    console.log('The final result is:', result);
+    _.flatten(result);
+    //console.log('The final result is: ', result);
     return;
   } else {
     return job;
@@ -106,7 +84,6 @@ io.on('connect', function(socket) {
   socket.on('ready', function() {
     thisWorker = addWorker();
     console.log(thisWorker.id + ' is ready');
-  
     socket.emit('newjob', assignJob());
   });
 
@@ -123,13 +100,12 @@ io.on('connect', function(socket) {
     resolveJob(data);
     console.log('Result so far is', result);
 
-    setTimeout(function() {
-      if (currentJob < jobs.length) {
-        socket.emit('newjob', assignJob());
-      } else {
-        console.log('No more jobs available');
-      }
-    }, 2000);
+    if (currentJob < jobs.length) {
+      socket.emit('newjob', assignJob());
+    } else {
+      io.emit('jobresult', 'Your time is: ' + myTimer.time());
+      console.log('No more jobs available');
+    }
 
   });
 
